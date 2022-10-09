@@ -103,7 +103,7 @@ namespace UniVRM10
         /// </summary>
         public void ApplySpringBoneJointParameterChange()
         {
-            //Joint数まで検証すると正常系の計算コストとして高いため、Springsの個数だけ見るに留める
+            //事前検証はSpringsの個数だけ見るに留める。Joints.Count - 1の総和を見ると更に厳格なチェックとなるが省く
             if (m_target.SpringBone.Springs.Count != m_fastSpringBoneBuffer.Springs.Length)
             {
                 throw new InvalidOperationException("Spring count is inconsistent");
@@ -111,24 +111,25 @@ namespace UniVRM10
 
             m_fastSpringBoneService.BufferCombiner.Unregister(m_fastSpringBoneBuffer);
             var index = 0;
+            var arr = m_fastSpringBoneBuffer.Joints;
             foreach (var spring in m_target.SpringBone.Springs)
             {
                 var len = spring.Joints.Count - 1;
                 for (var i = 0; i < len; i++)
                 {
                     var source = spring.Joints[i];
-                    var dest = m_fastSpringBoneBuffer.Joints[index];
-                    dest.radius = source.m_jointRadius;
-                    dest.dragForce = source.m_dragForce;
-                    dest.gravityDir = source.m_gravityDir;
-                    dest.gravityPower = source.m_gravityPower;
-                    dest.stiffnessForce = source.m_stiffnessForce;
-                    var arr = m_fastSpringBoneBuffer.Joints;
-                    arr[index] = dest;
-                    m_fastSpringBoneBuffer.Joints = arr;
+                    arr[index] = new BlittableJoint()
+                    {
+                        radius = source.m_jointRadius,
+                        dragForce = source.m_dragForce,
+                        gravityDir = source.m_gravityDir,
+                        gravityPower = source.m_gravityPower,
+                        stiffnessForce = source.m_stiffnessForce,
+                    };
                     index++;
                 }
             }
+            m_fastSpringBoneBuffer.Joints = arr;
             m_fastSpringBoneService.BufferCombiner.Register(m_fastSpringBoneBuffer);
         }
         
