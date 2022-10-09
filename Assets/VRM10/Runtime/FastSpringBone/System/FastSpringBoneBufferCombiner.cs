@@ -210,72 +210,23 @@ namespace UniVRM10.FastSpringBones.System
         }
 
         private bool _usingSingleBuffer = false;
-        private readonly FastSpringBoneBuffer[] _singleBatchedBuffer = new FastSpringBoneBuffer[1];
-        private readonly int[] _singleBufferLogicSizes = new int[1];
         
         /// <summary>
-        /// バッファを再構築する: _buffersの長さが1である場合の専用実装で、Allocが大幅に少ない
+        /// バッファを再構築する: _buffersの長さが1である場合の専用実装で、ほぼ何もAllocしない
         /// </summary>
         private JobHandle ReconstructSingleBuffer(JobHandle handle)
         {
+            // バッファを数えず、構築もしないでBuffer自体を見る: 実際にはそもそもJobがあるわけでもない
+            Profiler.BeginSample("FastSpringBone.ReconstructSingleBuffers.CreateBuffers");
             var buffer = _buffers.First();
-
-            Profiler.BeginSample("FastSpringBone.ReconstructBuffers.CopyToBatchedBuffers");
-            _singleBatchedBuffer[0] = buffer;
-            _singleBufferLogicSizes[0] = buffer.Logics.Length;
-            _batchedBuffers = _singleBatchedBuffer;
-            _batchedBufferLogicSizes = _singleBufferLogicSizes;
-            Profiler.EndSample();
-
-            // バッファを数えず、構築もしないでBuffer自体を見る
-            Profiler.BeginSample("FastSpringBone.ReconstructBuffers.CreateBuffers");
             _springs = buffer.Springs;
             _joints = buffer.Joints;
             _logics = buffer.Logics;
             _colliders = buffer.Colliders;
             _transforms = buffer.BlittableTransforms;
-            Profiler.EndSample();
-
-            Profiler.BeginSample("FastSpringBone.ReconstructBuffers.ScheduleLoadBufferJobs");
-            
-            // バッファの読み込みをスケジュール
-            handle = new LoadTransformsJob
-            {
-                SrcTransforms = buffer.BlittableTransforms,
-                DestTransforms = new NativeSlice<BlittableTransform>(_transforms, 0, buffer.BlittableTransforms.Length)
-            }.Schedule(buffer.BlittableTransforms.Length, 1, handle);
-            
-            handle = new LoadSpringsJob
-            {
-                SrcSprings = buffer.Springs,
-                DestSprings = new NativeSlice<BlittableSpring>(_springs, 0, buffer.Springs.Length),
-            }.Schedule(buffer.Springs.Length, 1, handle);
-            
-            handle = new LoadCollidersJob()
-            {
-                SrcColliders = buffer.Colliders,
-                DestColliders = new NativeSlice<BlittableCollider>(_colliders, 0, buffer.Colliders.Length)
-            }.Schedule(buffer.Colliders.Length, 1, handle);
-            
-            handle = new OffsetLogicsJob()
-            {
-                SrcLogics = buffer.Logics,
-                SrcJoints = buffer.Joints,
-                DestLogics = new NativeSlice<BlittableLogic>(_logics, 0, buffer.Logics.Length),
-                DestJoints = new NativeSlice<BlittableJoint>(_joints, 0, buffer.Logics.Length),
-            }.Schedule(buffer.Logics.Length, 1, handle);
-
-            // TransformAccessArrayの構築と並行してJobを行うため、この時点で走らせておく
-            JobHandle.ScheduleBatchedJobs();
-            Profiler.EndSample();
-
-            // TransformAccessArrayの構築
-            Profiler.BeginSample("FastSpringBone.ReconstructBuffers.LoadTransformAccessArray");
+            //NOTE: ここも冗長だったら消したい
             _transformAccessArray = new TransformAccessArray(buffer.Transforms);
             Profiler.EndSample();
-
-            Profiler.EndSample();
-
             return handle;
         }
 
