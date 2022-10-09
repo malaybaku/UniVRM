@@ -99,7 +99,7 @@ namespace UniVRM10
         }
 
         /// <summary>
-        /// SpringBoneの個数を変更せずにパラメータのみを変更したとき、その変更を適用する
+        /// SpringBoneの個数を変更せずにパラメータのみを変更したとき、その変更をAllocを行わずに適用する
         /// </summary>
         public void ApplySpringBoneJointParameterChange()
         {
@@ -109,6 +109,7 @@ namespace UniVRM10
                 throw new InvalidOperationException("Spring count is inconsistent");
             }
 
+            m_fastSpringBoneService.BufferCombiner.Unregister(m_fastSpringBoneBuffer);
             var index = 0;
             foreach (var spring in m_target.SpringBone.Springs)
             {
@@ -128,6 +129,7 @@ namespace UniVRM10
                     index++;
                 }
             }
+            m_fastSpringBoneService.BufferCombiner.Register(m_fastSpringBoneBuffer);
         }
         
         private FastSpringBoneBuffer CreateFastSpringBoneBuffer(Vrm10InstanceSpringBone springBone)
