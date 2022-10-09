@@ -98,6 +98,38 @@ namespace UniVRM10
             m_fastSpringBoneService.BufferCombiner.Register(m_fastSpringBoneBuffer);
         }
 
+        /// <summary>
+        /// SpringBoneの個数を変更せずにパラメータのみを変更したとき、その変更を適用する
+        /// </summary>
+        public void ApplySpringBoneJointParameterChange()
+        {
+            //Joint数まで検証すると正常系の計算コストとして高いため、Springsの個数だけ見るに留める
+            if (m_target.SpringBone.Springs.Count != m_fastSpringBoneBuffer.Springs.Length)
+            {
+                throw new InvalidOperationException("Spring count is inconsistent");
+            }
+
+            var index = 0;
+            foreach (var spring in m_target.SpringBone.Springs)
+            {
+                var len = spring.Joints.Count - 1;
+                for (var i = 0; i < len; i++)
+                {
+                    var source = spring.Joints[i];
+                    var dest = m_fastSpringBoneBuffer.Joints[index];
+                    dest.radius = source.m_jointRadius;
+                    dest.dragForce = source.m_dragForce;
+                    dest.gravityDir = source.m_gravityDir;
+                    dest.gravityPower = source.m_gravityPower;
+                    dest.stiffnessForce = source.m_stiffnessForce;
+                    var arr = m_fastSpringBoneBuffer.Joints;
+                    arr[index] = dest;
+                    m_fastSpringBoneBuffer.Joints = arr;
+                    index++;
+                }
+            }
+        }
+        
         private FastSpringBoneBuffer CreateFastSpringBoneBuffer(Vrm10InstanceSpringBone springBone)
         {
             return new FastSpringBoneBuffer(

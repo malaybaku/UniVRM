@@ -14,7 +14,7 @@ namespace UniVRM10.FastSpringBones.System
     public class FastSpringBoneBuffer : IDisposable
     {
         public NativeArray<BlittableSpring> Springs { get; }
-        public NativeArray<BlittableJoint> Joints { get; }
+        public NativeArray<BlittableJoint> Joints { get; set; }
         public NativeArray<BlittableCollider> Colliders { get; }
         public NativeArray<BlittableLogic> Logics { get; }
         public NativeArray<BlittableTransform> BlittableTransforms { get; }
