@@ -100,7 +100,7 @@ namespace UniVRM10.FastSpringBones.System
             Profiler.EndSample();
 
             Profiler.BeginSample("FastSpringBone.ReconstructBuffers.DisposeBuffers");
-            DisposeAllBuffers(_usingSingleBuffer);
+            DisposeAllBuffers();
             Profiler.EndSample();
 
             _usingSingleBuffer = false;
@@ -232,7 +232,7 @@ namespace UniVRM10.FastSpringBones.System
             return handle;
         }
 
-        private void DisposeAllBuffers(bool singleBufferMode = false)
+        private void DisposeAllBuffers()
         {
             if (!_needDispose)
             {
@@ -240,7 +240,7 @@ namespace UniVRM10.FastSpringBones.System
             }
 
             _needDispose = false;
-            if (singleBufferMode)
+            if (_usingSingleBuffer)
             {
                 //SingleBufferの場合、もとのバッファと共有の配列を削除しない
                 if (_transformAccessArray.isCreated) _transformAccessArray.Dispose();
