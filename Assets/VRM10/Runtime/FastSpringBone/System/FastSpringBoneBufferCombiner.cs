@@ -30,6 +30,8 @@ namespace UniVRM10.FastSpringBones.System
         private int[] _batchedBufferLogicSizes;
 
         private bool _isDirty;
+        private bool _usingSingleBuffer;
+        private bool _needDispose;
 
         public NativeArray<BlittableSpring> Springs => _springs;
         public NativeArray<BlittableJoint> Joints => _joints;
@@ -99,9 +101,11 @@ namespace UniVRM10.FastSpringBones.System
 
             Profiler.BeginSample("FastSpringBone.ReconstructBuffers.DisposeBuffers");
             DisposeAllBuffers(_usingSingleBuffer);
-            _usingSingleBuffer = false;
             Profiler.EndSample();
 
+            _usingSingleBuffer = false;
+            _needDispose = true;
+            
             if (_buffers.Count == 1)
             {
                 _usingSingleBuffer = true;
@@ -209,8 +213,6 @@ namespace UniVRM10.FastSpringBones.System
             return handle;
         }
 
-        private bool _usingSingleBuffer = false;
-        
         /// <summary>
         /// バッファを再構築する: _buffersの長さが1である場合の専用実装で、ほぼ何もAllocしない
         /// </summary>
@@ -232,6 +234,12 @@ namespace UniVRM10.FastSpringBones.System
 
         private void DisposeAllBuffers(bool singleBufferMode = false)
         {
+            if (!_needDispose)
+            {
+                return;
+            }
+
+            _needDispose = false;
             if (singleBufferMode)
             {
                 //SingleBufferの場合、もとのバッファと共有の配列を削除しない
